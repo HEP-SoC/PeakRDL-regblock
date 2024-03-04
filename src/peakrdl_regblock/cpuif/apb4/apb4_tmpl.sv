@@ -1,6 +1,13 @@
 // Request
 logic is_active;
+wire is_activeVoted = is_active;
 always_ff {{get_always_ff_event(cpuif.reset)}} begin
+    is_active = is_activeVoted;
+    cpuif_req <= cpuif_reqVoted;
+    cpuif_req_is_wr <= cpuif_req_is_wrVoted;
+    cpuif_addr <= cpuif_addrVoted;
+    cpuif_wr_data <= cpuif_wr_dataVoted;
+    cpuif_wr_biten <= cpuif_wr_bitenVoted;
     if({{get_resetsignal(cpuif.reset)}}) begin
         is_active <= '0;
         cpuif_req <= '0;
@@ -9,7 +16,7 @@ always_ff {{get_always_ff_event(cpuif.reset)}} begin
         cpuif_wr_data <= '0;
         cpuif_wr_biten <= '0;
     end else begin
-        if(~is_active) begin
+        if(~is_activeVoted) begin
             if({{cpuif.signal("psel")}}) begin
                 is_active <= '1;
                 cpuif_req <= '1;
@@ -26,7 +33,7 @@ always_ff {{get_always_ff_event(cpuif.reset)}} begin
             end
         end else begin
             cpuif_req <= '0;
-            if(cpuif_rd_ack || cpuif_wr_ack) begin
+            if(cpuif_rd_ackVoted || cpuif_wr_ackVoted) begin
                 is_active <= '0;
             end
         end
@@ -34,6 +41,6 @@ always_ff {{get_always_ff_event(cpuif.reset)}} begin
 end
 
 // Response
-assign {{cpuif.signal("pready")}} = cpuif_rd_ack | cpuif_wr_ack;
-assign {{cpuif.signal("prdata")}} = cpuif_rd_data;
-assign {{cpuif.signal("pslverr")}} = cpuif_rd_err | cpuif_wr_err;
+assign {{cpuif.signal("pready")}} = cpuif_rd_ackVoted | cpuif_wr_ackVoted;
+assign {{cpuif.signal("prdata")}} = cpuif_rd_dataVoted;
+assign {{cpuif.signal("pslverr")}} = cpuif_rd_errVoted | cpuif_wr_errVoted;

@@ -45,7 +45,8 @@ class FieldLogic:
         if s is None:
             return ""
 
-        return s + "\nfield_storage_t field_storage;"
+        s = s + "\nfield_storage_t field_storage;"
+        return s + "\nfield_storage_t field_storageVoted = field_storage;"
 
     def get_combo_struct(self) -> str:
         struct_gen = CombinationalStructGenerator(self)
@@ -75,6 +76,15 @@ class FieldLogic:
         assert field.implements_storage
         path = get_indexed_path(self.top_node, field)
         return f"field_storage.{path}.value"
+
+    def get_voted_storage_identifier(self, field: 'FieldNode') -> str:
+        """
+        Returns the Verilog string that represents the storage register element
+        for the referenced field
+        """
+        assert field.implements_storage
+        path = get_indexed_path(self.top_node, field)
+        return f"field_storageVoted.{path}.value"
 
     def get_next_q_identifier(self, field: 'FieldNode') -> str:
         """
