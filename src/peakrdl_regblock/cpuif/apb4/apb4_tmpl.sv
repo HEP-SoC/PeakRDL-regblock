@@ -2,7 +2,7 @@
 logic is_active;
 wire is_activeVoted = is_active;
 always_ff {{get_always_ff_event(cpuif.reset)}} begin
-    is_active = is_activeVoted;
+    is_active <= is_activeVoted;
     cpuif_req <= cpuif_reqVoted;
     cpuif_req_is_wr <= cpuif_req_is_wrVoted;
     cpuif_addr <= cpuif_addrVoted;
