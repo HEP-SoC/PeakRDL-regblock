@@ -33,7 +33,7 @@ always_ff {{get_always_ff_event(cpuif.reset)}} begin
             end
         end else begin
             cpuif_req <= '0;
-            if(cpuif_rd_ackVoted || cpuif_wr_ackVoted) begin
+            if(cpuif_rd_ack|| cpuif_wr_ack) begin
                 is_active <= '0;
             end
         end
@@ -41,6 +41,6 @@ always_ff {{get_always_ff_event(cpuif.reset)}} begin
 end
 
 // Response
-assign {{cpuif.signal("pready")}} = cpuif_rd_ackVoted | cpuif_wr_ackVoted;
-assign {{cpuif.signal("prdata")}} = cpuif_rd_dataVoted;
-assign {{cpuif.signal("pslverr")}} = cpuif_rd_errVoted | cpuif_wr_errVoted;
+assign {{cpuif.signal("pready")}} = cpuif_rd_ack | cpuif_wr_ack;
+assign {{cpuif.signal("prdata")}} = cpuif_rd_data;
+assign {{cpuif.signal("pslverr")}} = cpuif_rd_err | cpuif_wr_err;

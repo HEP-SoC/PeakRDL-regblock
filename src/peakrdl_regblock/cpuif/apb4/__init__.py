@@ -18,7 +18,7 @@ class APB4_Cpuif_flattened(APB4_Cpuif):
             "input wire " + self.signal("psel"),
             "input wire " + self.signal("penable"),
             "input wire " + self.signal("pwrite"),
-            "input wire [2:0] " + self.signal("pprot"),
+            # "input wire [2:0] " + self.signal("pprot"),
             f"input wire [{self.addr_width-1}:0] " + self.signal("paddr"),
             f"input wire [{self.data_width-1}:0] " + self.signal("pwdata"),
             f"input wire [{self.data_width_bytes-1}:0] " + self.signal("pstrb"),
