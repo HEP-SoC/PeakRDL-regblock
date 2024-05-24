@@ -89,6 +89,17 @@ class DesignScanner(RDLListener):
             if not isinstance(node, RegNode):
                 self.ds.has_external_block = True
 
+    def enter_Addrmap(self, node: 'AddrmapNode') -> None:
+        # Extract addrmap integer parameters to convert them to HW parameters
+        for param in node.inst.parameters:
+            if isinstance(param.get_value(), int):
+                if param.name not in self.ds.hw_params:
+                    self.ds.hw_params[param.name] = param.get_value()
+                else:
+                    # This simple solution does not allow multiple parameters to have the same name
+                    # over different addrmap components
+                    self.msg.warning(f"Parameter {param.name} already defined")
+
     def enter_Reg(self, node: 'RegNode') -> None:
         # The CPUIF's bus width is sized according to the largest accesswidth in the design
         accesswidth = node.get_property('accesswidth')
