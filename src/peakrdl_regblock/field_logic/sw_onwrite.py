@@ -123,7 +123,7 @@ class _OnWrite(NextStateConditional):
         sidx = field.low // accesswidth
 
         # field does not get split between subwords
-        R = self.exp.field_logic.get_storage_identifier(field)
+        R = self.exp.field_logic.get_voted_storage_identifier(field)
         D = self._wr_data(field, sidx)
         S = self._wr_biten(field, sidx)
         lines = [

@@ -150,7 +150,7 @@ class DecodeLogicGenerator(RDLForLoopGenerator):
             # Is an external block
             addr_str = self._get_address_str(node)
             strb = self.addr_decode.get_external_block_access_strobe(node)
-            rhs = f"cpuif_req_masked & (cpuif_addr >= {addr_str}) & (cpuif_addr <= {addr_str} + {SVInt(node.size - 1, self.addr_decode.exp.ds.addr_width)})"
+            rhs = f"cpuif_req_masked & (cpuif_addrVoted >= {addr_str}) & (cpuif_addrVoted <= {addr_str} + {SVInt(node.size - 1, self.addr_decode.exp.ds.addr_width)})"
             self.add_content(f"{strb} = {rhs};")
             self.add_content(f"is_external |= {rhs};")
             return WalkerAction.SkipDescendants
@@ -173,7 +173,7 @@ class DecodeLogicGenerator(RDLForLoopGenerator):
         accesswidth = node.get_property('accesswidth')
 
         if regwidth == accesswidth:
-            rhs = f"cpuif_req_masked & (cpuif_addr == {self._get_address_str(node)})"
+            rhs = f"cpuif_req_masked & (cpuif_addrVoted == {self._get_address_str(node)})"
             s = f"{self.addr_decode.get_access_strobe(node)} = {rhs};"
             self.add_content(s)
             if node.external:
@@ -192,7 +192,7 @@ class DecodeLogicGenerator(RDLForLoopGenerator):
             n_subwords = regwidth // accesswidth
             subword_stride = accesswidth // 8
             for i in range(n_subwords):
-                rhs = f"cpuif_req_masked & (cpuif_addr == {self._get_address_str(node, subword_offset=(i*subword_stride))})"
+                rhs = f"cpuif_req_masked & (cpuif_addrVoted == {self._get_address_str(node, subword_offset=(i*subword_stride))})"
                 s = f"{self.addr_decode.get_access_strobe(node)}[{i}] = {rhs};"
                 self.add_content(s)
                 if node.external:

@@ -3,7 +3,7 @@
 always_comb begin
     automatic logic [{{node.width-1}}:0] next_c;
     automatic logic load_next_c;
-    next_c = {{field_logic.get_storage_identifier(node)}};
+    next_c = {{field_logic.get_voted_storage_identifier(node)}};
     load_next_c = '0;
 
     {%- for signal in extra_combo_signals %}
@@ -41,7 +41,7 @@ always_comb begin
     {{field_logic.get_field_combo_identifier(node, "load_next")}} = load_next_c;
 
     {%- if node.get_property('paritycheck') %}
-    {{field_logic.get_parity_error_identifier(node)}} = ({{field_logic.get_parity_identifier(node)}} != ^{{field_logic.get_storage_identifier(node)}});
+    {{field_logic.get_parity_error_identifier(node)}} = ({{field_logic.get_parity_identifier(node)}} != ^{{field_logic.get_voted_storage_identifier(node)}});
     {%- endif %}
 end
 {% if reset is not none -%}
@@ -49,6 +49,7 @@ always_ff {{get_always_ff_event(resetsignal)}} begin
 {%- else %}
 always_ff @(posedge clk) begin
 {%- endif %}
+    {{field_logic.get_storage_identifier(node)}} <= {{field_logic.get_voted_storage_identifier(node)}};
     {% if reset is not none -%}
     if({{get_resetsignal(resetsignal)}}) begin
         {{field_logic.get_storage_identifier(node)}} <= {{reset}};
