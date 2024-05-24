@@ -126,11 +126,35 @@ class ReadbackAssignmentGenerator(RDLForLoopGenerator):
         strb = self.exp.hwif.get_external_rd_ack(node)
         data = self.exp.hwif.get_external_rd_data(node)
         regwidth = node.get_property('regwidth')
-        if regwidth < self.exp.cpuif.data_width:
-            self.add_content(f"assign readback_array[{self.current_offset_str}][{self.exp.cpuif.data_width-1}:{regwidth}] = '0;")
-            self.add_content(f"assign readback_array[{self.current_offset_str}][{regwidth-1}:0] = {strb} ? {data} : '0;")
-        else:
-            self.add_content(f"assign readback_array[{self.current_offset_str}] = {strb} ? {data} : '0;")
+        # if regwidth < self.exp.cpuif.data_width:
+        #     self.add_content(f"assign readback_array[{self.current_offset_str}][{self.exp.cpuif.data_width-1}:{regwidth}] = '0;")
+        #     self.add_content(f"assign readback_array[{self.current_offset_str}][{regwidth-1}:0] = {strb} ? {data} : '0;")
+        # else:
+        #     self.add_content(f"assign readback_array[{self.current_offset_str}] = {strb} ? {data} : '0;")
+
+        # This solution does not cover all the cases (it expects the rdata to contain multiple fields, but apparently it is not always the case)
+        current_bit = 0
+        for field in node.fields():
+            if not field.is_sw_readable:
+                continue
+
+            # insert reserved assignment before this field if needed
+            if field.low != current_bit:
+                self.add_content(f"assign readback_array[{self.current_offset_str}][{field.low-1}:{current_bit}] = '0;")
+
+            value = self.exp.dereferencer.get_value(field)
+            if field.msb < field.lsb:
+                # Field gets bitswapped since it is in [low:high] orientation
+                value = do_bitswap(value)
+
+            self.add_content(f"assign readback_array[{self.current_offset_str}][{field.high}:{field.low}] = {strb} ? {data}.{field.inst_name} : '0;")
+
+            current_bit = field.high + 1
+
+        # Insert final reserved assignment if needed
+        bus_width = self.exp.cpuif.data_width
+        if current_bit < bus_width:
+            self.add_content(f"assign readback_array[{self.current_offset_str}][{bus_width-1}:{current_bit}] = '0;")
 
         self.current_offset += 1
 
