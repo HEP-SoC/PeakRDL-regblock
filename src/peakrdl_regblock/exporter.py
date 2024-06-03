@@ -248,9 +248,6 @@ class DesignState:
         # Track any referenced enums
         self.user_enums = [] # type: List[Type[UserEnum]]
 
-        # HW parameters added to the package
-        self.hw_params = {}
-
         # Scan the design to fill in above variables
         DesignScanner(self).do_scan()
 

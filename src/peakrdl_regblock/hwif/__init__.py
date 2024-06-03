@@ -55,9 +55,6 @@ class Hwif:
         """
         lines = []
 
-        for key in self.ds.hw_params:
-            lines.append(f"localparam int {key} = {self.ds.hw_params[key]};")
-
         gen_in = self._gen_in_cls(self)
         structs_in = gen_in.get_struct(
             self.top_node,
