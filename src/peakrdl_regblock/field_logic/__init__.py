@@ -45,7 +45,7 @@ class FieldLogic:
         if s is None:
             return ""
 
-        s = s + "\nfield_storage_t field_storage;"
+        s = "// tmrg copy start\n" + s + "\n// tmrg copy stop" + "\nfield_storage_t field_storage;"
         s = s + "\nfield_storage_t field_storageVoted;"
         return s + "\nassign field_storageVoted = field_storage;"
 
@@ -57,7 +57,7 @@ class FieldLogic:
         if s is None:
             return ""
 
-        return s + "\nfield_combo_t field_combo;"
+        return "// tmrg copy start\n" + s + "\n// tmrg copy stop" + "\nfield_combo_t field_combo;"
 
     def get_implementation(self) -> str:
         gen = FieldLogicGenerator(self)

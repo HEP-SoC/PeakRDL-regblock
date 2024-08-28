@@ -71,10 +71,12 @@ module {{ds.module_name}}
         end else begin
             if(external_req & ~external_wr_ack & ~external_rd_ack) external_pending <= '1;
             else if(external_wr_ack | external_rd_ack) external_pending <= '0;
+            // tmrg ignore start
             assert(!external_wr_ack || (external_pending | external_req))
                 else $error("An external wr_ack strobe was asserted when no external request was active");
             assert(!external_rd_ack || (external_pending | external_req))
                 else $error("An external rd_ack strobe was asserted when no external request was active");
+            // tmrg ignore stop
         end
     end
 {%- endif %}
@@ -138,7 +140,9 @@ module {{ds.module_name}}
     //--------------------------------------------------------------------------
     // Address Decode
     //--------------------------------------------------------------------------
+    // tmrg copy start
     {{address_decode.get_strobe_struct()|indent}}
+    // tmrg copy stop
     decoded_reg_strb_t decoded_reg_strb;
 {%- if ds.has_external_addressable %}
     logic decoded_strb_is_external;
@@ -153,7 +157,7 @@ module {{ds.module_name}}
 
     always_comb begin
     {%- if ds.has_external_addressable %}
-        automatic logic is_external;
+        logic is_external;
         is_external = '0;
     {%- endif %}
         {{address_decode.get_implementation()|indent(8)}}
@@ -208,7 +212,7 @@ module {{ds.module_name}}
         if({{get_resetsignal(cpuif.reset)}}) begin
             parity_error <= '0;
         end else begin
-            automatic logic err;
+            logic err;
             err = '0;
             {{parity.get_implementation()|indent(12)}}
             parity_error <= err;
@@ -231,7 +235,7 @@ module {{ds.module_name}}
     //--------------------------------------------------------------------------
 {%- if ds.has_external_addressable %}
     always_comb begin
-        automatic logic wr_ack;
+        logic wr_ack;
         wr_ack = '0;
         {{ext_write_acks.get_implementation()|indent(8)}}
         external_wr_ack = wr_ack;
@@ -249,7 +253,7 @@ module {{ds.module_name}}
 {%- if ds.has_external_addressable %}
     logic readback_external_rd_ack_c;
     always_comb begin
-        automatic logic rd_ack;
+        logic rd_ack;
         rd_ack = '0;
         {{ext_read_acks.get_implementation()|indent(8)}}
         readback_external_rd_ack_c = rd_ack;
