@@ -49,7 +49,6 @@ always_ff {{get_always_ff_event(resetsignal)}} begin
 {%- else %}
 always_ff @(posedge clk) begin
 {%- endif %}
-    {{field_logic.get_storage_identifier(node)}} <= {{field_logic.get_voted_storage_identifier(node)}};
     {% if reset is not none -%}
     if({{get_resetsignal(resetsignal)}}) begin
         {{field_logic.get_storage_identifier(node)}} <= {{reset}};
@@ -61,6 +60,8 @@ always_ff @(posedge clk) begin
         {%- if node.get_property('paritycheck') %}
         {{field_logic.get_parity_identifier(node)}} <= ^{{field_logic.get_field_combo_identifier(node, "next")}};
         {%- endif %}
+    end else begin
+        {{field_logic.get_storage_identifier(node)}} <= {{field_logic.get_voted_storage_identifier(node)}};
     end
 
     {%- if field_logic.has_next_q(node) %}

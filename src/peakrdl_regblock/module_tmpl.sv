@@ -65,12 +65,12 @@ module {{ds.module_name}}
     logic external_wr_ack;
     logic external_rd_ack;
     always_ff {{get_always_ff_event(cpuif.reset)}} begin
-        external_pending <= external_pendingVoted;
         if({{get_resetsignal(cpuif.reset)}}) begin
             external_pending <= '0;
         end else begin
             if(external_req & ~external_wr_ack & ~external_rd_ack) external_pending <= '1;
             else if(external_wr_ack | external_rd_ack) external_pending <= '0;
+            else external_pending <= external_pendingVoted;
             // tmrg ignore start
             assert(!external_wr_ack || (external_pending | external_req))
                 else $error("An external wr_ack strobe was asserted when no external request was active");
@@ -95,7 +95,6 @@ module {{ds.module_name}}
     logic [{{ds.min_read_latency - ds.min_write_latency - 1}}:0] cpuif_req_stall_sr;
     wire [{{ds.min_read_latency - ds.min_write_latency - 1}}:0] cpuif_req_stall_srVoted = cpuif_req_stall_sr;
     always_ff {{get_always_ff_event(cpuif.reset)}} begin
-        cpuif_req_stall_sr <= cpuif_req_stall_srVoted;
         if({{get_resetsignal(cpuif.reset)}}) begin
             cpuif_req_stall_sr <= '0;
         end else if(cpuif_reqVoted && !cpuif_req_is_wrVoted) begin
@@ -116,7 +115,6 @@ module {{ds.module_name}}
     logic [{{ds.min_write_latency - ds.min_read_latency - 1}}:0] cpuif_req_stall_sr;
     wire [{{ds.min_write_latency - ds.min_read_latency - 1}}:0] cpuif_req_stall_srVoted = cpuif_req_stall_sr;
     always_ff {{get_always_ff_event(cpuif.reset)}} begin
-        cpuif_req_stall_sr <= cpuif_req_stall_srVoted;
         if({{get_resetsignal(cpuif.reset)}}) begin
             cpuif_req_stall_sr <= '0;
         end else if(cpuif_reqVoted && cpuif_req_is_wrVoted) begin
@@ -208,7 +206,6 @@ module {{ds.module_name}}
     //--------------------------------------------------------------------------
     wire parity_errorVoted = parity_error;
     always_ff {{get_always_ff_event(cpuif.reset)}} begin
-        parity_error <= parity_errorVoted;
         if({{get_resetsignal(cpuif.reset)}}) begin
             parity_error <= '0;
         end else begin
@@ -263,7 +260,6 @@ module {{ds.module_name}}
     wire readback_external_rd_ackVoted = readback_external_rd_ack;
     {%- if ds.retime_read_fanin %}
     always_ff {{get_always_ff_event(cpuif.reset)}} begin
-        readback_external_rd_ack <= readback_external_rd_ackVoted;
         if({{get_resetsignal(cpuif.reset)}}) begin
             readback_external_rd_ack <= '0;
         end else begin
