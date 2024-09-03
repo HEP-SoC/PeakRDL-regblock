@@ -9,6 +9,7 @@ module {{ds.module_name}}
     );
 
     // tmrg tmr_error true
+    /* verilator lint_off MULTIDRIVEN */
 
     //--------------------------------------------------------------------------
     // CPU Bus interface logic
@@ -326,5 +327,7 @@ module {{ds.module_name}}
     assign cpuif_rd_data = readback_data;
     assign cpuif_rd_err = readback_err;
 {%- endif %}
+
+    /* verilator lint_on MULTIDRIVEN */
 endmodule
 {# (eof newline anchor) #}
