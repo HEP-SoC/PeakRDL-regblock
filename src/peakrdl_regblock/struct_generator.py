@@ -34,14 +34,14 @@ class _AnonymousStruct(_StructBase):
             suffix = ""
 
         return (
-            "struct {\n"
+            "struct packed {\n"
             + super().__str__()
             + f"\n}} {self.inst_name}{suffix};"
         )
 
 
 class _TypedefStruct(_StructBase):
-    def __init__(self, type_name: str, inst_name: Optional[str] = None, array_dimensions: Optional[List[int]] = None, packed: bool = False):
+    def __init__(self, type_name: str, inst_name: Optional[str] = None, array_dimensions: Optional[List[int]] = None, packed: bool = True):
         super().__init__()
         self.type_name = type_name
         self.inst_name = inst_name
@@ -198,7 +198,7 @@ class FlatStructGenerator(StructGenerator):
         super().__init__()
         self.typedefs = OrderedDict() # type: OrderedDict[str, _TypedefStruct]
 
-    def push_struct(self, type_name: str, inst_name: str, array_dimensions: Optional[List[int]] = None, packed = False) -> None: # type: ignore # pylint: disable=arguments-renamed
+    def push_struct(self, type_name: str, inst_name: str, array_dimensions: Optional[List[int]] = None, packed = True) -> None: # type: ignore # pylint: disable=arguments-renamed
         s = _TypedefStruct(type_name, inst_name, array_dimensions, packed)
         self._struct_stack.append(s)
 
