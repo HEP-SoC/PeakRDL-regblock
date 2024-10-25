@@ -8,6 +8,8 @@ module {{ds.module_name}}
         {{get_module_port_list()|indent(8)}}
     );
 
+    // tmrg tmr_error true
+
     //--------------------------------------------------------------------------
     // CPU Bus interface logic
     //--------------------------------------------------------------------------
@@ -117,7 +119,7 @@ module {{ds.module_name}}
         automatic logic is_valid_addr;
         automatic logic is_valid_rw;
     {%- if ds.has_external_addressable %}
-        automatic logic is_external;
+        logic is_external;
         is_external = '0;
     {%- endif %}
     {%- if ds.err_if_bad_addr or ds.err_if_bad_rw %}
@@ -205,7 +207,7 @@ module {{ds.module_name}}
         if({{get_resetsignal(cpuif.reset)}}) begin
             parity_error <= '0;
         end else begin
-            automatic logic err;
+            logic err;
             err = '0;
             {{parity.get_implementation()|indent(12)}}
             parity_error <= err;
@@ -228,7 +230,7 @@ module {{ds.module_name}}
     //--------------------------------------------------------------------------
 {%- if ds.has_external_addressable %}
     always_comb begin
-        automatic logic wr_ack;
+        logic wr_ack;
         wr_ack = '0;
         {{ext_write_acks.get_implementation()|indent(8)}}
         external_wr_ack = wr_ack;
@@ -250,7 +252,7 @@ module {{ds.module_name}}
 {%- if ds.has_external_addressable %}
     logic readback_external_rd_ack_c;
     always_comb begin
-        automatic logic rd_ack;
+        logic rd_ack;
         rd_ack = '0;
         {{ext_read_acks.get_implementation()|indent(8)}}
         readback_external_rd_ack_c = rd_ack;
