@@ -27,6 +27,7 @@ module {{ds.module_name}}
         {{hwif.port_declaration|indent(8)}}
     );
 
+    // tmrg tmr_error true
     /* verilator lint_off MULTIDRIVEN */
 
     //--------------------------------------------------------------------------
