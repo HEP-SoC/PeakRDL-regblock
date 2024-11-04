@@ -24,6 +24,11 @@ always_ff {{get_always_ff_event(cpuif.reset)}} begin
                 for(int i=0; i<{{cpuif.data_width_bytes}}; i++) begin
                     cpuif_wr_biten[i*8 +: 8] <= {8{ {{-cpuif.signal("pstrb")}}[i]}};
                 end
+            end else begin
+                cpuif_req_is_wr <= cpuif_req_is_wrVoted;
+                cpuif_addr <= cpuif_addrVoted;
+                cpuif_wr_data <= cpuif_wr_dataVoted;
+                cpuif_wr_biten <= cpuif_wr_bitenVoted;
             end
         end else begin
             cpuif_req <= '0;
