@@ -260,7 +260,6 @@ module {{ds.module_name}}
     end
 
     logic readback_external_rd_ack;
-    wire readback_external_rd_ackVoted = readback_external_rd_ack;
     {%- if ds.retime_read_fanin %}
     always_ff {{get_always_ff_event(cpuif.reset)}} begin
         if({{get_resetsignal(cpuif.reset)}}) begin
@@ -271,7 +270,6 @@ module {{ds.module_name}}
     end
 
     {%- else %}
-
     assign readback_external_rd_ack = readback_external_rd_ack_c;
     {%- endif %}
 {%- endif %}
@@ -291,8 +289,8 @@ module {{ds.module_name}}
         {%- endif %}
         end else begin
         {%- if ds.has_external_addressable %}
-            external_rd_ack <= readback_external_rd_ackVoted;
-            cpuif_rd_ack <= readback_done | readback_external_rd_ackVoted;
+            external_rd_ack <= readback_external_rd_ack;
+            cpuif_rd_ack <= readback_done | readback_external_rd_ack;
         {%- else %}
             cpuif_rd_ack <= readback_done;
         {%- endif %}
@@ -302,8 +300,8 @@ module {{ds.module_name}}
     end
 {% else %}
     {%- if ds.has_external_addressable %}
-    assign external_rd_ack = readback_external_rd_ackVoted;
-    assign cpuif_rd_ack = readback_done | readback_external_rd_ackVoted;
+    assign external_rd_ack = readback_external_rd_ack;
+    assign cpuif_rd_ack = readback_done | readback_external_rd_ack;
     {%- else %}
     assign cpuif_rd_ack = readback_done;
     {%- endif %}
