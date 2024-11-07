@@ -291,8 +291,8 @@ module {{ds.module_name}}
         {%- endif %}
         end else begin
         {%- if ds.has_external_addressable %}
-            external_rd_ack <= readback_external_rd_ack;
-            cpuif_rd_ack <= readback_done | readback_external_rd_ack;
+            external_rd_ack <= readback_external_rd_ackVoted;
+            cpuif_rd_ack <= readback_done | readback_external_rd_ackVoted;
         {%- else %}
             cpuif_rd_ack <= readback_done;
         {%- endif %}
@@ -302,8 +302,8 @@ module {{ds.module_name}}
     end
 {% else %}
     {%- if ds.has_external_addressable %}
-    assign external_rd_ack = readback_external_rd_ack;
-    assign cpuif_rd_ack = readback_done | readback_external_rd_ack;
+    assign external_rd_ack = readback_external_rd_ackVoted;
+    assign cpuif_rd_ack = readback_done | readback_external_rd_ackVoted;
     {%- else %}
     assign cpuif_rd_ack = readback_done;
     {%- endif %}
