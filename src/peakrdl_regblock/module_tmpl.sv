@@ -87,8 +87,8 @@ module {{ds.module_name}}
     // Read & write latencies are balanced. Stalls not required
     {%- if ds.has_external_addressable %}
     // except if external
-    assign cpuif_req_stall_rd = external_pending;
-    assign cpuif_req_stall_wr = external_pending;
+    assign cpuif_req_stall_rd = external_pendingVoted;
+    assign cpuif_req_stall_wr = external_pendingVoted;
     {%- else %}
     assign cpuif_req_stall_rd = '0;
     assign cpuif_req_stall_wr = '0;
@@ -107,8 +107,8 @@ module {{ds.module_name}}
         end
     end
     {%- if ds.has_external_addressable %}
-    assign cpuif_req_stall_rd = external_pending;
-    assign cpuif_req_stall_wr = cpuif_req_stall_sr[0] | external_pending;
+    assign cpuif_req_stall_rd = external_pendingVoted;
+    assign cpuif_req_stall_wr = cpuif_req_stall_sr[0] | external_pendingVoted;
     {%- else %}
     assign cpuif_req_stall_rd = '0;
     assign cpuif_req_stall_wr = cpuif_req_stall_sr[0];
@@ -127,8 +127,8 @@ module {{ds.module_name}}
         end
     end
     {%- if ds.has_external_addressable %}
-    assign cpuif_req_stall_rd = cpuif_req_stall_sr[0] | external_pending;
-    assign cpuif_req_stall_wr = external_pending;
+    assign cpuif_req_stall_rd = cpuif_req_stall_sr[0] | external_pendingVoted;
+    assign cpuif_req_stall_wr = external_pendingVoted;
     {%- else %}
     assign cpuif_req_stall_rd = cpuif_req_stall_sr[0];
     assign cpuif_req_stall_wr = '0;
