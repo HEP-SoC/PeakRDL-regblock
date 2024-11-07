@@ -182,9 +182,9 @@ class DecodeLogicGenerator(RDLForLoopGenerator):
                 if readable and writable:
                     self.add_content(f"is_external |= {rhs};")
                 elif readable and not writable:
-                    self.add_content(f"is_external |= {rhs} & !cpuif_req_is_wr;")
+                    self.add_content(f"is_external |= {rhs} & !cpuif_req_is_wrVoted;")
                 elif not readable and writable:
-                    self.add_content(f"is_external |= {rhs} & cpuif_req_is_wr;")
+                    self.add_content(f"is_external |= {rhs} & cpuif_req_is_wrVoted;")
                 else:
                     raise RuntimeError
         else:
@@ -201,9 +201,9 @@ class DecodeLogicGenerator(RDLForLoopGenerator):
                     if readable and writable:
                         self.add_content(f"is_external |= {rhs};")
                     elif readable and not writable:
-                        self.add_content(f"is_external |= {rhs} & !cpuif_req_is_wr;")
+                        self.add_content(f"is_external |= {rhs} & !cpuif_req_is_wrVoted;")
                     elif not readable and writable:
-                        self.add_content(f"is_external |= {rhs} & cpuif_req_is_wr;")
+                        self.add_content(f"is_external |= {rhs} & cpuif_req_is_wrVoted;")
                     else:
                         raise RuntimeError
 
