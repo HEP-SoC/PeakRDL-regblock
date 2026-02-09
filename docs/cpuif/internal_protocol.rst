@@ -44,7 +44,7 @@ cpuif_req_stall_rd
     transfer will not be accepted until this signal is deasserted.
 
 cpuif_req_stall_wr
-    If asserted, and the next pending request is a read operation, then the
+    If asserted, and the next pending request is a write operation, then the
     transfer will not be accepted until this signal is deasserted.
 
 
@@ -60,8 +60,7 @@ cpuif_rd_err
     should return an error response if possible.
 
 cpuif_rd_data
-    Read data. The width of this is bus is determined by the size of the largest
-    register in the design.
+    Read data. Is sampled on the same cycle that ``cpuif_rd_ack`` is asserted.
 
 Write Response
 ^^^^^^^^^^^^^^

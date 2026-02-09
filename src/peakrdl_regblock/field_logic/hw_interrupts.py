@@ -21,7 +21,7 @@ class Sticky(NextStateConditional):
 
     def get_predicate(self, field: 'FieldNode') -> str:
         I = self.exp.hwif.get_input_identifier(field)
-        R = self.exp.field_logic.get_voted_storage_identifier(field)
+        R = self.exp.field_logic.get_storage_identifier(field)
         return f"({R} == '0) && ({I} != '0)"
 
     def get_assignments(self, field: 'FieldNode') -> List[str]:
@@ -41,19 +41,29 @@ class Stickybit(NextStateConditional):
         return (
             field.is_hw_writable
             and field.get_property('stickybit')
+            and field.get_property('intr type') in {None, InterruptType.level}
         )
 
     def get_predicate(self, field: 'FieldNode') -> str:
         F = self.exp.hwif.get_input_identifier(field)
-        return f"{F} != '0"
+        if field.width == 1:
+            return str(F)
+        else:
+            return f"{F} != '0"
 
     def get_assignments(self, field: 'FieldNode') -> List[str]:
-        I = self.exp.hwif.get_input_identifier(field)
-        R = self.exp.field_logic.get_voted_storage_identifier(field)
-        return [
-            f"next_c = {R} | {I};",
-            "load_next_c = '1;",
-        ]
+        if field.width == 1:
+            return [
+                "next_c = '1;",
+                "load_next_c = '1;",
+            ]
+        else:
+            I = self.exp.hwif.get_input_identifier(field)
+            R = self.exp.field_logic.get_storage_identifier(field)
+            return [
+                f"next_c = {R} | {I};",
+                "load_next_c = '1;",
+            ]
 
 class PosedgeStickybit(NextStateConditional):
     """
@@ -73,13 +83,19 @@ class PosedgeStickybit(NextStateConditional):
         return f"(~{Iq} & {I}) != '0"
 
     def get_assignments(self, field: 'FieldNode') -> List[str]:
-        I = self.exp.hwif.get_input_identifier(field)
-        Iq = self.exp.field_logic.get_next_q_identifier(field)
-        R = self.exp.field_logic.get_voted_storage_identifier(field)
-        return [
-            f"next_c = {R} | (~{Iq} & {I});",
-            "load_next_c = '1;",
-        ]
+        if field.width == 1:
+            return [
+                "next_c = '1;",
+                "load_next_c = '1;",
+            ]
+        else:
+            I = self.exp.hwif.get_input_identifier(field)
+            Iq = self.exp.field_logic.get_next_q_identifier(field)
+            R = self.exp.field_logic.get_storage_identifier(field)
+            return [
+                f"next_c = {R} | (~{Iq} & {I});",
+                "load_next_c = '1;",
+            ]
 
 class NegedgeStickybit(NextStateConditional):
     """
@@ -99,13 +115,19 @@ class NegedgeStickybit(NextStateConditional):
         return f"({Iq} & ~{I}) != '0"
 
     def get_assignments(self, field: 'FieldNode') -> List[str]:
-        I = self.exp.hwif.get_input_identifier(field)
-        Iq = self.exp.field_logic.get_next_q_identifier(field)
-        R = self.exp.field_logic.get_voted_storage_identifier(field)
-        return [
-            f"next_c = {R} | ({Iq} & ~{I});",
-            "load_next_c = '1;",
-        ]
+        if field.width == 1:
+            return [
+                "next_c = '1;",
+                "load_next_c = '1;",
+            ]
+        else:
+            I = self.exp.hwif.get_input_identifier(field)
+            Iq = self.exp.field_logic.get_next_q_identifier(field)
+            R = self.exp.field_logic.get_storage_identifier(field)
+            return [
+                f"next_c = {R} | ({Iq} & ~{I});",
+                "load_next_c = '1;",
+            ]
 
 class BothedgeStickybit(NextStateConditional):
     """
@@ -125,73 +147,16 @@ class BothedgeStickybit(NextStateConditional):
         return f"{Iq} != {I}"
 
     def get_assignments(self, field: 'FieldNode') -> List[str]:
-        I = self.exp.hwif.get_input_identifier(field)
-        Iq = self.exp.field_logic.get_next_q_identifier(field)
-        R = self.exp.field_logic.get_voted_storage_identifier(field)
-        return [
-            f"next_c = {R} | ({Iq} ^ {I});",
-            "load_next_c = '1;",
-        ]
-
-class PosedgeNonsticky(NextStateConditional):
-    """
-    Positive edge non-stickybit
-    """
-    is_unconditional = True
-    comment = "posedge nonsticky"
-    def is_match(self, field: 'FieldNode') -> bool:
-        return (
-            field.is_hw_writable
-            and not field.get_property('stickybit')
-            and field.get_property('intr type') == InterruptType.posedge
-        )
-
-    def get_assignments(self, field: 'FieldNode') -> List[str]:
-        I = self.exp.hwif.get_input_identifier(field)
-        Iq = self.exp.field_logic.get_next_q_identifier(field)
-        return [
-            f"next_c = ~{Iq} & {I};",
-            "load_next_c = '1;",
-        ]
-
-class NegedgeNonsticky(NextStateConditional):
-    """
-    Negative edge non-stickybit
-    """
-    is_unconditional = True
-    comment = "negedge nonsticky"
-    def is_match(self, field: 'FieldNode') -> bool:
-        return (
-            field.is_hw_writable
-            and not field.get_property('stickybit')
-            and field.get_property('intr type') == InterruptType.negedge
-        )
-
-    def get_assignments(self, field: 'FieldNode') -> List[str]:
-        I = self.exp.hwif.get_input_identifier(field)
-        Iq = self.exp.field_logic.get_next_q_identifier(field)
-        return [
-            f"next_c = {Iq} & ~{I};",
-            "load_next_c = '1;",
-        ]
-
-class BothedgeNonsticky(NextStateConditional):
-    """
-    edge-sensitive non-stickybit
-    """
-    is_unconditional = True
-    comment = "bothedge nonsticky"
-    def is_match(self, field: 'FieldNode') -> bool:
-        return (
-            field.is_hw_writable
-            and not field.get_property('stickybit')
-            and field.get_property('intr type') == InterruptType.bothedge
-        )
-
-    def get_assignments(self, field: 'FieldNode') -> List[str]:
-        I = self.exp.hwif.get_input_identifier(field)
-        Iq = self.exp.field_logic.get_next_q_identifier(field)
-        return [
-            f"next_c = {Iq} ^ {I};",
-            "load_next_c = '1;",
-        ]
+        if field.width == 1:
+            return [
+                "next_c = '1;",
+                "load_next_c = '1;",
+            ]
+        else:
+            I = self.exp.hwif.get_input_identifier(field)
+            Iq = self.exp.field_logic.get_next_q_identifier(field)
+            R = self.exp.field_logic.get_storage_identifier(field)
+            return [
+                f"next_c = {R} | ({Iq} ^ {I});",
+                "load_next_c = '1;",
+            ]

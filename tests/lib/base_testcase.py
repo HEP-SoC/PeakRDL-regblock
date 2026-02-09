@@ -39,6 +39,8 @@ class BaseTestCase(unittest.TestCase):
     retime_external = False
     default_reset_activelow = False
     default_reset_async = False
+    err_if_bad_addr = False
+    err_if_bad_rw = False
 
     #: this gets auto-loaded via the _load_request autouse fixture
     request = None # type: pytest.FixtureRequest
@@ -52,7 +54,7 @@ class BaseTestCase(unittest.TestCase):
     @property
     def rerun(self) -> bool:
         """
-        Re-run wothout deleting and re-generating prior output directory.
+        Re-run without deleting and re-generating prior output directory.
         """
         return self.request.config.getoption("--rerun")
 
@@ -79,14 +81,14 @@ class BaseTestCase(unittest.TestCase):
                 f.write(f"{k}: {repr(v)}\n")
 
 
-    def _export_regblock(self):
+    def export_regblock(self):
         """
         Call the peakrdl_regblock exporter to generate the DUT
         """
         this_dir = self.get_testcase_dir()
 
         if self.rdl_file:
-            rdl_file = self.rdl_file
+            rdl_file = os.path.join(this_dir, self.rdl_file)
         else:
             # Find any *.rdl file in testcase dir
             rdl_file = glob.glob(os.path.join(this_dir, "*.rdl"))[0]
@@ -118,7 +120,14 @@ class BaseTestCase(unittest.TestCase):
             retime_external_addrmap=self.retime_external,
             default_reset_activelow=self.default_reset_activelow,
             default_reset_async=self.default_reset_async,
+            err_if_bad_addr=self.err_if_bad_addr,
+            err_if_bad_rw=self.err_if_bad_rw,
         )
+
+    def delete_run_dir(self) -> None:
+        run_dir = self.get_run_dir()
+        if os.path.exists(run_dir):
+            shutil.rmtree(run_dir)
 
     def setUp(self) -> None:
         if self.rerun:
@@ -126,11 +135,10 @@ class BaseTestCase(unittest.TestCase):
 
         # Create fresh build dir
         run_dir = self.get_run_dir()
-        if os.path.exists(run_dir):
-            shutil.rmtree(run_dir)
+        self.delete_run_dir()
         pathlib.Path(run_dir).mkdir(parents=True, exist_ok=True)
 
         self._write_params()
 
         # Convert testcase RDL file --> SV
-        self._export_regblock()
+        self.export_regblock()

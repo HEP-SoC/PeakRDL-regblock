@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional, List
 import textwrap
 from collections import OrderedDict
 
-from systemrdl.walker import RDLListener, RDLWalker
+from systemrdl.walker import RDLListener, RDLWalker, WalkerAction
 
 from .identifier_filter import kw_filter as kwf
 
@@ -88,16 +88,30 @@ class StructGenerator:
         self._struct_stack.append(s)
 
 
-    def add_member(self, name: str, width: int = 1, array_dimensions: Optional[List[int]] = None) -> None:
+    def add_member(
+            self,
+            name: str,
+            width: int = 1,
+            array_dimensions: Optional[List[int]] = None,
+            *,
+            lsb: int = 0,
+            signed: bool = False,
+    ) -> None:
         if array_dimensions:
             suffix = "[" + "][".join((str(n) for n in array_dimensions)) + "]"
         else:
             suffix = ""
 
-        if width == 1:
-            m = f"logic {name}{suffix};"
+        if signed:
+            sign = "signed "
         else:
-            m = f"logic [{width-1}:0] {name}{suffix};"
+            # the default 'logic' type is unsigned per SV LRM 6.11.3
+            sign = ""
+
+        if width == 1 and lsb == 0:
+            m = f"logic {sign}{name}{suffix};"
+        else:
+            m = f"logic {sign}[{lsb+width-1}:{lsb}] {name}{suffix};"
         self.current_struct.children.append(m)
 
 
@@ -140,32 +154,41 @@ class RDLStructGenerator(StructGenerator, RDLListener):
         return self.finish()
 
 
-    def enter_Addrmap(self, node: 'AddrmapNode') -> None:
+    def enter_Addrmap(self, node: 'AddrmapNode') -> Optional[WalkerAction]:
         self.push_struct(kwf(node.inst_name), node.array_dimensions)
+        return WalkerAction.Continue
 
-    def exit_Addrmap(self, node: 'AddrmapNode') -> None:
+    def exit_Addrmap(self, node: 'AddrmapNode') -> Optional[WalkerAction]:
         self.pop_struct()
+        return WalkerAction.Continue
 
-    def enter_Regfile(self, node: 'RegfileNode') -> None:
+    def enter_Regfile(self, node: 'RegfileNode') -> Optional[WalkerAction]:
         self.push_struct(kwf(node.inst_name), node.array_dimensions)
+        return WalkerAction.Continue
 
-    def exit_Regfile(self, node: 'RegfileNode') -> None:
+    def exit_Regfile(self, node: 'RegfileNode') -> Optional[WalkerAction]:
         self.pop_struct()
+        return WalkerAction.Continue
 
-    def enter_Mem(self, node: 'MemNode') -> None:
+    def enter_Mem(self, node: 'MemNode') -> Optional[WalkerAction]:
         self.push_struct(kwf(node.inst_name), node.array_dimensions)
+        return WalkerAction.Continue
 
-    def exit_Mem(self, node: 'MemNode') -> None:
+    def exit_Mem(self, node: 'MemNode') -> Optional[WalkerAction]:
         self.pop_struct()
+        return WalkerAction.Continue
 
-    def enter_Reg(self, node: 'RegNode') -> None:
+    def enter_Reg(self, node: 'RegNode') -> Optional[WalkerAction]:
         self.push_struct(kwf(node.inst_name), node.array_dimensions)
+        return WalkerAction.Continue
 
-    def exit_Reg(self, node: 'RegNode') -> None:
+    def exit_Reg(self, node: 'RegNode') -> Optional[WalkerAction]:
         self.pop_struct()
+        return WalkerAction.Continue
 
-    def enter_Field(self, node: 'FieldNode') -> None:
+    def enter_Field(self, node: 'FieldNode') -> Optional[WalkerAction]:
         self.add_member(kwf(node.inst_name), node.width)
+        return WalkerAction.Continue
 
 #-------------------------------------------------------------------------------
 
@@ -228,33 +251,42 @@ class RDLFlatStructGenerator(FlatStructGenerator, RDLListener):
 
         return self.finish()
 
-    def enter_Addrmap(self, node: 'AddrmapNode') -> None:
+    def enter_Addrmap(self, node: 'AddrmapNode') -> Optional[WalkerAction]:
         type_name = self.get_typdef_name(node)
         self.push_struct(type_name, kwf(node.inst_name), node.array_dimensions)
+        return WalkerAction.Continue
 
-    def exit_Addrmap(self, node: 'AddrmapNode') -> None:
+    def exit_Addrmap(self, node: 'AddrmapNode') -> Optional[WalkerAction]:
         self.pop_struct()
+        return WalkerAction.Continue
 
-    def enter_Regfile(self, node: 'RegfileNode') -> None:
+    def enter_Regfile(self, node: 'RegfileNode') -> Optional[WalkerAction]:
         type_name = self.get_typdef_name(node)
         self.push_struct(type_name, kwf(node.inst_name), node.array_dimensions)
+        return WalkerAction.Continue
 
-    def exit_Regfile(self, node: 'RegfileNode') -> None:
+    def exit_Regfile(self, node: 'RegfileNode') -> Optional[WalkerAction]:
         self.pop_struct()
+        return WalkerAction.Continue
 
-    def enter_Mem(self, node: 'MemNode') -> None:
+    def enter_Mem(self, node: 'MemNode') -> Optional[WalkerAction]:
         type_name = self.get_typdef_name(node)
         self.push_struct(type_name, kwf(node.inst_name), node.array_dimensions)
+        return WalkerAction.Continue
 
-    def exit_Mem(self, node: 'MemNode') -> None:
+    def exit_Mem(self, node: 'MemNode') -> Optional[WalkerAction]:
         self.pop_struct()
+        return WalkerAction.Continue
 
-    def enter_Reg(self, node: 'RegNode') -> None:
+    def enter_Reg(self, node: 'RegNode') -> Optional[WalkerAction]:
         type_name = self.get_typdef_name(node)
         self.push_struct(type_name, kwf(node.inst_name), node.array_dimensions)
+        return WalkerAction.Continue
 
-    def exit_Reg(self, node: 'RegNode') -> None:
+    def exit_Reg(self, node: 'RegNode') -> Optional[WalkerAction]:
         self.pop_struct()
+        return WalkerAction.Continue
 
-    def enter_Field(self, node: 'FieldNode') -> None:
+    def enter_Field(self, node: 'FieldNode') -> Optional[WalkerAction]:
         self.add_member(kwf(node.inst_name), node.width)
+        return WalkerAction.Continue

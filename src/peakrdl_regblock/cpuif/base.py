@@ -37,8 +37,8 @@ class CpuifBase:
     @property
     def parameters(self) -> List[str]:
         """
-        Optional list of additional parameters this CPU interface provides to
-        the module's definition
+        Optional list of additional parameter declarations this CPU interface
+        provides to the module's definition
         """
         return []
 
@@ -69,6 +69,7 @@ class CpuifBase:
             "clog2": clog2,
             "is_pow2": is_pow2,
             "roundup_pow2": roundup_pow2,
+            "ds": self.exp.ds,
         }
 
         template = jj_env.get_template(self.template_path)

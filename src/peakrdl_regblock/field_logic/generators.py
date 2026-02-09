@@ -7,8 +7,9 @@ from systemrdl.node import RegNode, RegfileNode, MemNode, AddrmapNode
 
 from ..struct_generator import RDLStructGenerator
 from ..forloop_generator import RDLForLoopGenerator
-from ..utils import get_indexed_path
+from ..utils import get_indexed_path, clog2
 from ..identifier_filter import kw_filter as kwf
+from .bases import NextStateUnconditional
 
 if TYPE_CHECKING:
     from . import FieldLogic
@@ -117,6 +118,7 @@ class FieldLogicGenerator(RDLForLoopGenerator):
         )
         self.intr_fields = [] # type: List[FieldNode]
         self.halt_fields = [] # type: List[FieldNode]
+        self.msg = self.ds.top_node.env.msg
 
 
     def enter_AddressableComponent(self, node: 'AddressableNode') -> Optional[WalkerAction]:
@@ -212,14 +214,21 @@ class FieldLogicGenerator(RDLForLoopGenerator):
     def generate_field_storage(self, node: 'FieldNode') -> None:
         conditionals = self.field_logic.get_conditionals(node)
         extra_combo_signals = OrderedDict()
-        unconditional = None
+        unconditional: Optional[NextStateUnconditional] = None
         new_conditionals = []
         for conditional in conditionals:
             for signal in conditional.get_extra_combo_signals(node):
                 extra_combo_signals[signal.name] = signal
 
-            if conditional.is_unconditional:
-                assert unconditional is None # Can only have one unconditional assignment per field
+            if isinstance(conditional, NextStateUnconditional):
+                if unconditional is not None:
+                    # Too inconvenient to validate this early. Easier to validate here in-place generically
+                    self.msg.fatal(
+                        "Field has multiple conflicting properties that unconditionally set its state:\n"
+                        f"  * {conditional.unconditional_explanation}\n"
+                        f"  * {unconditional.unconditional_explanation}",
+                        node.inst.inst_src_ref
+                    )
                 unconditional = conditional
             else:
                 new_conditionals.append(conditional)
@@ -347,6 +356,7 @@ class FieldLogicGenerator(RDLForLoopGenerator):
             bslice = ""
 
         context = {
+            'node': node,
             "has_sw_writable": node.has_sw_writable,
             "has_sw_readable": node.has_sw_readable,
             "prefix": prefix,
@@ -362,7 +372,7 @@ class FieldLogicGenerator(RDLForLoopGenerator):
     def assign_external_block_outputs(self, node: 'AddressableNode') -> None:
         prefix = "hwif_out." + get_indexed_path(self.exp.ds.top_node, node)
         strb = self.exp.dereferencer.get_external_block_access_strobe(node)
-        addr_width = node.size.bit_length()
+        addr_width = clog2(node.size)
 
         retime = False
         if isinstance(node, RegfileNode):
@@ -373,6 +383,7 @@ class FieldLogicGenerator(RDLForLoopGenerator):
             retime = self.ds.retime_external_addrmap
 
         context = {
+            'node': node,
             "prefix": prefix,
             "strb": strb,
             "addr_width": addr_width,

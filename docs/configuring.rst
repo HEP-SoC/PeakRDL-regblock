@@ -5,7 +5,7 @@ Configuring PeakRDL-regblock
 
 If using the `PeakRDL command line tool <https://peakrdl.readthedocs.io/>`_,
 some aspects of the ``regblock`` command have additional configuration options
-avaiable via the PeakRDL TOML file.
+available via the PeakRDL TOML file.
 
 All regblock-specific options are defined under the ``[regblock]`` TOML heading.
 
@@ -43,3 +43,13 @@ All regblock-specific options are defined under the ``[regblock]`` TOML heading.
 
         [regblock]
         default_reset = "arst"
+
+.. data:: err_if_bad_addr
+
+    If set to true, generate CPUIF error response if a transaction attempts to
+    access an address that does not map to anything.
+
+.. data:: err_if_bad_rw
+
+    If set to true, generate CPUIF error response if an illegal access is
+    performed to a read-only or write-only register.

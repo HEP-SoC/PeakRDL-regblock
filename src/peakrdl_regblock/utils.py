@@ -1,5 +1,5 @@
 import re
-from typing import Match, Union
+from typing import Match, Union, Optional
 
 from systemrdl.rdltypes.references import PropertyReference
 from systemrdl.node import Node, AddrmapNode
@@ -45,10 +45,13 @@ def ref_is_internal(top_node: AddrmapNode, ref: Union[Node, PropertyReference]) 
 
     For the sake of this exporter, root signals are treated as internal.
     """
+    current_node: Optional[Node]
     if isinstance(ref, Node):
         current_node = ref
     elif isinstance(ref, PropertyReference):
         current_node = ref.node
+    else:
+        raise RuntimeError
 
     while current_node is not None:
         if current_node == top_node:
@@ -63,7 +66,7 @@ def ref_is_internal(top_node: AddrmapNode, ref: Union[Node, PropertyReference]) 
         current_node = current_node.parent
 
     # A root signal was referenced, which dodged the top addrmap
-    # This is considerd internal for this exporter
+    # This is considered internal for this exporter
     return True
 
 

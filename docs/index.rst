@@ -10,38 +10,26 @@ your hardware design.
 * Options for many popular CPU interface protocols (AMBA APB, AXI4-Lite, and more)
 * Configurable pipelining options for designs with fast clock rates.
 * Broad support for SystemRDL 2.0 features
-* Fully synthesizable SystemVerilog. Tested on Xilinx/AMD's Vivado & Intel Quartus
-
-.. warning::
-
-    The PeakRDL-regblock SV generator is still in pre-production (v0.x version numbers).
-    During this time, I may decide to refactor things which could affect compatibility.
 
 
-Installing
-----------
-
-Install from `PyPi`_ using pip
-
-.. code-block:: bash
-
-    python3 -m pip install peakrdl-regblock
-
-.. _PyPi: https://pypi.org/project/peakrdl-regblock
-
-
-
-Example
--------
+Quick Start
+-----------
 The easiest way to use PeakRDL-regblock is via the  `PeakRDL command line tool <https://peakrdl.readthedocs.io/>`_:
 
 .. code-block:: bash
 
-    # Install the command line tool
-    python3 -m pip install peakrdl
+    # Install PeakRDL-regblock along with the command-line tool
+    python3 -m pip install peakrdl-regblock[cli]
 
     # Export!
     peakrdl regblock atxmega_spi.rdl -o regblock/ --cpuif axi4-lite
+
+
+Looking for VHDL?
+-----------------
+This project generates SystemVerilog RTL. If you prefer using VHDL, check out
+the sister project which aims to be a feature-equivalent fork of
+PeakRDL-regblock: `PeakRDL-regblock-VHDL <https://peakrdl-regblock-vhdl.readthedocs.io>`_
 
 
 Links
@@ -62,6 +50,7 @@ Links
     hwif
     configuring
     limitations
+    faq
     licensing
     api
 
@@ -73,6 +62,7 @@ Links
     cpuif/apb
     cpuif/axi4lite
     cpuif/avalon
+    cpuif/obi
     cpuif/passthrough
     cpuif/internal_protocol
     cpuif/customizing
@@ -101,3 +91,5 @@ Links
     udps/read_buffering
     udps/write_buffering
     udps/extended_swacc
+    udps/signed
+    udps/fixedpoint

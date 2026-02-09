@@ -1,37 +1,18 @@
-from typing import TYPE_CHECKING, Dict, Type, List, Any
+from typing import TYPE_CHECKING, Dict, Type
 import functools
 import sys
 
-from peakrdl.plugins.exporter import ExporterSubcommandPlugin #pylint: disable=import-error
-from peakrdl.config import schema #pylint: disable=import-error
+from peakrdl.plugins.exporter import ExporterSubcommandPlugin
+from peakrdl.config import schema
+from peakrdl.plugins.entry_points import get_entry_points
 
 from .exporter import RegblockExporter
-from .cpuif import CpuifBase, apb3, apb4, axi4lite, passthrough, avalon
+from .cpuif import CpuifBase, apb3, apb4, axi4lite, passthrough, avalon, obi
 from .udps import ALL_UDPS
-from . import entry_points
 
 if TYPE_CHECKING:
     import argparse
     from systemrdl.node import AddrmapNode
-
-
-class Choice(schema.String):
-    """
-    Schema that matches against a specific set of allowed strings
-
-    Base PeakRDL does not have this schema yet. Polyfill here for now until it
-    is added and widely available.
-    """
-    def __init__(self, choices: List[str]) -> None:
-        super().__init__()
-        self.choices = choices
-
-    def extract(self, data: Any, path: str, err_ctx: str) -> Any:
-        s = super().extract(data, path, err_ctx)
-        if s not in self.choices:
-            raise schema.SchemaException(f"{err_ctx}: Value '{s}' is not a valid choice. Must be one of: {','.join(self.choices)}")
-        return s
-
 
 class Exporter(ExporterSubcommandPlugin):
     short_desc = "Generate a SystemVerilog control/status register (CSR) block"
@@ -40,7 +21,9 @@ class Exporter(ExporterSubcommandPlugin):
 
     cfg_schema = {
         "cpuifs": {"*": schema.PythonObjectImport()},
-        "default_reset": Choice(["rst", "rst_n", "arst", "arst_n"]),
+        "default_reset": schema.Choice(["rst", "rst_n", "arst", "arst_n"]),
+        "err_if_bad_addr": schema.Boolean(),
+        "err_if_bad_rw": schema.Boolean(),
     }
 
     @functools.lru_cache()
@@ -57,10 +40,12 @@ class Exporter(ExporterSubcommandPlugin):
             "axi4-lite-flat": axi4lite.AXI4Lite_Cpuif_flattened,
             "avalon-mm": avalon.Avalon_Cpuif,
             "avalon-mm-flat": avalon.Avalon_Cpuif_flattened,
+            "obi": obi.OBI_Cpuif,
+            "obi-flat": obi.OBI_Cpuif_flattened,
         }
 
         # Load any cpuifs specified via entry points
-        for ep, dist in entry_points.get_entry_points("peakrdl_regblock.cpuif"):
+        for ep, dist in get_entry_points("peakrdl_regblock.cpuif"):
             name = ep.name
             cpuif = ep.load()
             if name in cpuifs:
@@ -80,7 +65,7 @@ class Exporter(ExporterSubcommandPlugin):
         return cpuifs
 
 
-    def add_exporter_arguments(self, arg_group: 'argparse.ArgumentParser') -> None:
+    def add_exporter_arguments(self, arg_group: 'argparse._ActionsContainer') -> None:
         cpuifs = self.get_cpuifs()
 
         arg_group.add_argument(
@@ -136,7 +121,8 @@ class Exporter(ExporterSubcommandPlugin):
             "--rt-read-fanin",
             action="store_true",
             default=False,
-            help="Enable additional read path retiming. Good for register blocks with large readback fan-in"
+            help="""Enable additional read path retiming. Good for register
+            blocks with large readback fan-in"""
         )
         arg_group.add_argument(
             "--rt-read-response",
@@ -146,7 +132,8 @@ class Exporter(ExporterSubcommandPlugin):
         )
         arg_group.add_argument(
             "--rt-external",
-            help="Retime outputs to external components. Specify a comma-separated list of: reg,regfile,mem,addrmap,all"
+            help="""Retime outputs to external components. Specify a
+            comma-separated list of: reg,regfile,mem,addrmap,all"""
         )
 
         arg_group.add_argument(
@@ -158,6 +145,21 @@ class Exporter(ExporterSubcommandPlugin):
             is active-high and synchronous [rst]"""
         )
 
+        arg_group.add_argument(
+            "--err-if-bad-addr",
+            action="store_true",
+            default=False,
+            help="""Generate CPUIF error response if a transaction attempts to
+            access an address that does not map to anything."""
+        )
+
+        arg_group.add_argument(
+            "--err-if-bad-rw",
+            action="store_true",
+            default=False,
+            help="""Generate CPUIF error response if an illegal access is
+            performed to a read-only or write-only register."""
+        )
 
     def do_export(self, top_node: 'AddrmapNode', options: 'argparse.Namespace') -> None:
         cpuifs = self.get_cpuifs()
@@ -220,5 +222,7 @@ class Exporter(ExporterSubcommandPlugin):
             generate_hwif_report=options.hwif_report,
             address_width=options.addr_width,
             default_reset_activelow=default_reset_activelow,
+            err_if_bad_addr=options.err_if_bad_addr or self.cfg['err_if_bad_addr'],
+            err_if_bad_rw=options.err_if_bad_rw or self.cfg['err_if_bad_rw'],
             default_reset_async=default_reset_async,
         )

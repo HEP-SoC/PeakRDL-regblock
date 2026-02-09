@@ -6,6 +6,7 @@ from systemrdl.walker import WalkerAction
 from ..struct_generator import RDLFlatStructGenerator
 from ..identifier_filter import kw_filter as kwf
 from ..sv_int import SVInt
+from ..utils import clog2
 
 if TYPE_CHECKING:
     from systemrdl.node import Node, SignalNode, AddressableNode, RegfileNode
@@ -34,11 +35,11 @@ class HWIFStructGenerator(RDLFlatStructGenerator):
         super().pop_struct()
         self.hwif_report_stack.pop()
 
-    def add_member(self, name: str, width: int = 1) -> None: # type: ignore # pylint: disable=arguments-differ
-        super().add_member(name, width)
+    def add_member(self, name: str, width: int = 1, *, lsb: int = 0, signed: bool = False) -> None: # type: ignore # pylint: disable=arguments-differ
+        super().add_member(name, width, lsb=lsb, signed=signed)
 
-        if width > 1:
-            suffix = f"[{width-1}:0]"
+        if width > 1 or lsb != 0:
+            suffix = f"[{lsb+width-1}:{lsb}]"
         else:
             suffix = ""
 
@@ -72,13 +73,13 @@ class InputStructGenerator_Hier(HWIFStructGenerator):
         self.add_member("rd_data", self.hwif.ds.cpuif_data_width)
         self.add_member("wr_ack")
 
-    def enter_Addrmap(self, node: 'AddrmapNode') -> None:
+    def enter_Addrmap(self, node: 'AddrmapNode') -> Optional[WalkerAction]:
         super().enter_Addrmap(node)
         assert node.external
         self._add_external_block_members(node)
         return WalkerAction.SkipDescendants
 
-    def enter_Regfile(self, node: 'RegfileNode') -> None:
+    def enter_Regfile(self, node: 'RegfileNode') -> Optional[WalkerAction]:
         super().enter_Regfile(node)
         if node.external:
             self._add_external_block_members(node)
@@ -110,27 +111,27 @@ class InputStructGenerator_Hier(HWIFStructGenerator):
             # External reg is 1 sub-word. Add a packed struct to represent it
             type_name = self.get_typdef_name(node, "__fields")
             self.push_struct(type_name, "rd_data", packed=True)
-            current_bit = 0
-            for field in node.fields():
+            current_bit = width - 1
+            for field in reversed(list(node.fields())):
                 if not field.is_sw_readable:
                     continue
-                if field.low > current_bit:
+                if field.high < current_bit:
                     # Add padding
                     self.add_member(
-                        f"_reserved_{field.low - 1}_{current_bit}",
-                        field.low - current_bit
+                        f"_reserved_{current_bit}_{field.high + 1}",
+                        current_bit - field.high
                     )
                 self.add_member(
                     kwf(field.inst_name),
                     field.width
                 )
-                current_bit = field.high + 1
+                current_bit = field.low - 1
 
             # Add end padding if needed
-            if current_bit != width:
+            if current_bit != -1:
                 self.add_member(
-                    f"_reserved_{width - 1}_{current_bit}",
-                    width - current_bit
+                    f"_reserved_{current_bit}_0",
+                    current_bit + 1
                 )
             self.pop_struct()
         else:
@@ -144,7 +145,14 @@ class InputStructGenerator_Hier(HWIFStructGenerator):
         # Provide input to field's next value if it is writable by hw, and it
         # was not overridden by the 'next' property
         if node.is_hw_writable and node.get_property('next') is None:
-            self.add_member("next", node.width)
+            # Get the field's LSB index (can be nonzero for fixed-point values)
+            fracwidth = node.get_property("fracwidth")
+            lsb = 0 if fracwidth is None else -fracwidth
+
+            # get the signedness of the field
+            signed = node.get_property("is_signed")
+
+            self.add_member("next", node.width, lsb=lsb, signed=signed)
 
         # Generate implied inputs
         for prop_name in ["we", "wel", "swwe", "swwel", "hwclr", "hwset"]:
@@ -194,18 +202,18 @@ class OutputStructGenerator_Hier(HWIFStructGenerator):
 
     def _add_external_block_members(self, node: 'AddressableNode') -> None:
         self.add_member("req")
-        self.add_member("addr", (node.size - 1).bit_length())
+        self.add_member("addr", clog2(node.size))
         self.add_member("req_is_wr")
         self.add_member("wr_data", self.hwif.ds.cpuif_data_width)
         self.add_member("wr_biten", self.hwif.ds.cpuif_data_width)
 
-    def enter_Addrmap(self, node: 'AddrmapNode') -> None:
+    def enter_Addrmap(self, node: 'AddrmapNode') -> Optional[WalkerAction]:
         super().enter_Addrmap(node)
         assert node.external
         self._add_external_block_members(node)
         return WalkerAction.SkipDescendants
 
-    def enter_Regfile(self, node: 'RegfileNode') -> None:
+    def enter_Regfile(self, node: 'RegfileNode') -> Optional[WalkerAction]:
         super().enter_Regfile(node)
         if node.external:
             self._add_external_block_members(node)
@@ -237,27 +245,27 @@ class OutputStructGenerator_Hier(HWIFStructGenerator):
             # External reg is 1 sub-word. Add a packed struct to represent it
             type_name = self.get_typdef_name(node, "__fields")
             self.push_struct(type_name, name, packed=True)
-            current_bit = 0
-            for field in node.fields():
+            current_bit = width - 1
+            for field in reversed(list(node.fields())):
                 if not field.is_sw_writable:
                     continue
-                if field.low > current_bit:
+                if field.high < current_bit:
                     # Add padding
                     self.add_member(
-                        f"_reserved_{field.low - 1}_{current_bit}",
-                        field.low - current_bit
+                        f"_reserved_{current_bit}_{field.high + 1}",
+                        current_bit - field.high
                     )
                 self.add_member(
                     kwf(field.inst_name),
                     field.width
                 )
-                current_bit = field.high + 1
+                current_bit = field.low - 1
 
             # Add end padding if needed
-            if current_bit != width:
+            if current_bit != -1:
                 self.add_member(
-                    f"_reserved_{width - 1}_{current_bit}",
-                    width - current_bit
+                    f"_reserved_{current_bit}_0",
+                    current_bit + 1
                 )
             self.pop_struct()
         else:
@@ -270,7 +278,14 @@ class OutputStructGenerator_Hier(HWIFStructGenerator):
 
         # Expose field's value if it is readable by hw
         if node.is_hw_readable:
-            self.add_member("value", node.width)
+            # Get the node's LSB index (can be nonzero for fixed-point values)
+            fracwidth = node.get_property("fracwidth")
+            lsb = 0 if fracwidth is None else -fracwidth
+
+            # get the signedness of the field
+            signed = node.get_property("is_signed")
+
+            self.add_member("value", node.width, lsb=lsb, signed=signed)
 
         # Generate output bit signals enabled via property
         for prop_name in ["anded", "ored", "xored", "swmod", "swacc", "overflow", "underflow", "rd_swacc", "wr_swacc"]:
