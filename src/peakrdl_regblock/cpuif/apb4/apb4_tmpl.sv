@@ -1,4 +1,5 @@
 {%- if cpuif.is_interface -%}
+// tmrg ignore start
 `ifndef SYNTHESIS
     initial begin
         assert_bad_addr_width: assert($bits({{cpuif.signal("paddr")}}) >= {{ds.package_name}}::{{ds.module_name.upper()}}_MIN_ADDR_WIDTH)
@@ -7,6 +8,7 @@
             else $error("Interface data width of %0d is incorrect. Shall be %0d bits", $bits({{cpuif.signal("pwdata")}}), {{ds.package_name}}::{{ds.module_name.upper()}}_DATA_WIDTH);
     end
 `endif
+// tmrg ignore stop
 
 {% endif -%}
 
@@ -45,7 +47,7 @@ always_ff {{get_always_ff_event(cpuif.reset)}} begin
             end
         end else begin
             cpuif_req <= '0;
-            if(cpuif_rd_ack|| cpuif_wr_ack) begin
+            if(cpuif_rd_ack || cpuif_wr_ack) begin
                 is_active <= '0;
             end
         end

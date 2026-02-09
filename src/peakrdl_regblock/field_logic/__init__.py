@@ -79,6 +79,15 @@ class FieldLogic:
         path = get_indexed_path(self.top_node, field)
         return f"field_storageVoted.{path}.value"
 
+    def get_voted_storage_identifier(self, field: 'FieldNode') -> str:
+        """
+        Returns the Verilog string that represents the voted storage register element
+        for the referenced field
+        """
+        assert field.implements_storage
+        path = get_indexed_path(self.top_node, field)
+        return f"field_storageVoted.{path}.value"
+
     def get_next_q_identifier(self, field: 'FieldNode') -> str:
         """
         Returns the Verilog string that represents the storage register element
