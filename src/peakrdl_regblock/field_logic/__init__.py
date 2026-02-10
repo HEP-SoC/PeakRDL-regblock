@@ -77,7 +77,7 @@ class FieldLogic:
         """
         assert field.implements_storage
         path = get_indexed_path(self.top_node, field)
-        return f"field_storageVoted.{path}.value"
+        return f"field_storage.{path}.value"
 
     def get_voted_storage_identifier(self, field: 'FieldNode') -> str:
         """
