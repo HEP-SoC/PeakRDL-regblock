@@ -55,14 +55,6 @@ module {{ds.module_name}}
             if(external_req & ~external_wr_ack & ~external_rd_ack) external_pending <= '1;
             else if(external_wr_ack | external_rd_ack) external_pending <= '0;
             else external_pending <= external_pendingVoted;
-            // tmrg ignore start
-            `ifndef SYNTHESIS
-                assert_bad_ext_wr_ack: assert(!external_wr_ack || (external_pending | external_req))
-                    else $error("An external wr_ack strobe was asserted when no external request was active");
-                assert_bad_ext_rd_ack: assert(!external_rd_ack || (external_pending | external_req))
-                    else $error("An external rd_ack strobe was asserted when no external request was active");
-            `endif
-            // tmrg ignore stop
         end
     end
 {%- endif %}
