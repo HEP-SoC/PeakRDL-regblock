@@ -21,7 +21,7 @@ class Sticky(NextStateConditional):
 
     def get_predicate(self, field: 'FieldNode') -> str:
         I = self.exp.hwif.get_input_identifier(field)
-        R = self.exp.field_logic.get_storage_identifier(field)
+        R = self.exp.field_logic.get_voted_storage_identifier(field)
         return f"({R} == '0) && ({I} != '0)"
 
     def get_assignments(self, field: 'FieldNode') -> List[str]:
@@ -59,7 +59,7 @@ class Stickybit(NextStateConditional):
             ]
         else:
             I = self.exp.hwif.get_input_identifier(field)
-            R = self.exp.field_logic.get_storage_identifier(field)
+            R = self.exp.field_logic.get_voted_storage_identifier(field)
             return [
                 f"next_c = {R} | {I};",
                 "load_next_c = '1;",
@@ -91,7 +91,7 @@ class PosedgeStickybit(NextStateConditional):
         else:
             I = self.exp.hwif.get_input_identifier(field)
             Iq = self.exp.field_logic.get_next_q_identifier(field)
-            R = self.exp.field_logic.get_storage_identifier(field)
+            R = self.exp.field_logic.get_voted_storage_identifier(field)
             return [
                 f"next_c = {R} | (~{Iq} & {I});",
                 "load_next_c = '1;",
@@ -123,7 +123,7 @@ class NegedgeStickybit(NextStateConditional):
         else:
             I = self.exp.hwif.get_input_identifier(field)
             Iq = self.exp.field_logic.get_next_q_identifier(field)
-            R = self.exp.field_logic.get_storage_identifier(field)
+            R = self.exp.field_logic.get_voted_storage_identifier(field)
             return [
                 f"next_c = {R} | ({Iq} & ~{I});",
                 "load_next_c = '1;",
@@ -155,7 +155,7 @@ class BothedgeStickybit(NextStateConditional):
         else:
             I = self.exp.hwif.get_input_identifier(field)
             Iq = self.exp.field_logic.get_next_q_identifier(field)
-            R = self.exp.field_logic.get_storage_identifier(field)
+            R = self.exp.field_logic.get_voted_storage_identifier(field)
             return [
                 f"next_c = {R} | ({Iq} ^ {I});",
                 "load_next_c = '1;",
