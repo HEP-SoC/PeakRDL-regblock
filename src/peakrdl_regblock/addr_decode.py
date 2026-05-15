@@ -134,7 +134,7 @@ class DecodeLogicGenerator(RDLForLoopGenerator):
 
     def _add_addressablenode_decoding_flags(self, node: 'AddressableNode') -> None:
         addr_str = self._get_address_str(node)
-        addr_decoding_str = f"cpuif_req_masked & (cpuif_addr >= {addr_str}) & (cpuif_addr <= {addr_str} + {SVInt(node.size - 1, self.addr_decode.exp.ds.addr_width)})"
+        addr_decoding_str = f"cpuif_req_masked & (cpuif_addrVoted >= {addr_str}) & (cpuif_addrVoted <= {addr_str} + {SVInt(node.size - 1, self.addr_decode.exp.ds.addr_width)})"
         rhs = addr_decoding_str
         rhs_valid_addr = addr_decoding_str
         if isinstance(node, MemNode):
@@ -143,11 +143,11 @@ class DecodeLogicGenerator(RDLForLoopGenerator):
             if readable and writable:
                 rhs_invalid_rw = "'0"
             elif readable and not writable:
-                rhs = f"{addr_decoding_str} & !cpuif_req_is_wr"
-                rhs_invalid_rw = f"{addr_decoding_str} & cpuif_req_is_wr"
+                rhs = f"{addr_decoding_str} & !cpuif_req_is_wrVoted"
+                rhs_invalid_rw = f"{addr_decoding_str} & cpuif_req_is_wrVoted"
             elif not readable and writable:
-                rhs = f"{addr_decoding_str} & cpuif_req_is_wr"
-                rhs_invalid_rw = f"{addr_decoding_str} & !cpuif_req_is_wr"
+                rhs = f"{addr_decoding_str} & cpuif_req_is_wrVoted"
+                rhs_invalid_rw = f"{addr_decoding_str} & !cpuif_req_is_wrVoted"
             else:
                 raise RuntimeError
         # Add decoding flags
@@ -198,9 +198,9 @@ class DecodeLogicGenerator(RDLForLoopGenerator):
         subword_index: Union[int, None] = None,
         subword_stride: Union[int, None] = None) -> None:
         if subword_index is None or subword_stride is None:
-            addr_decoding_str = f"cpuif_req_masked & (cpuif_addr == {self._get_address_str(node)})"
+            addr_decoding_str = f"cpuif_req_masked & (cpuif_addrVoted == {self._get_address_str(node)})"
         else:
-            addr_decoding_str = f"cpuif_req_masked & (cpuif_addr == {self._get_address_str(node, subword_offset=subword_index*subword_stride)})"
+            addr_decoding_str = f"cpuif_req_masked & (cpuif_addrVoted == {self._get_address_str(node, subword_offset=subword_index*subword_stride)})"
         rhs_valid_addr = addr_decoding_str
         readable = node.has_sw_readable
         writable = node.has_sw_writable
@@ -208,11 +208,11 @@ class DecodeLogicGenerator(RDLForLoopGenerator):
             rhs = addr_decoding_str
             rhs_invalid_rw = "'0"
         elif readable and not writable:
-            rhs = f"{addr_decoding_str} & !cpuif_req_is_wr"
-            rhs_invalid_rw = f"{addr_decoding_str} & cpuif_req_is_wr"
+            rhs = f"{addr_decoding_str} & !cpuif_req_is_wrVoted"
+            rhs_invalid_rw = f"{addr_decoding_str} & cpuif_req_is_wrVoted"
         elif not readable and writable:
-            rhs = f"{addr_decoding_str} & cpuif_req_is_wr"
-            rhs_invalid_rw = f"{addr_decoding_str} & !cpuif_req_is_wr"
+            rhs = f"{addr_decoding_str} & cpuif_req_is_wrVoted"
+            rhs_invalid_rw = f"{addr_decoding_str} & !cpuif_req_is_wrVoted"
         else:
             raise RuntimeError
         # Add decoding flags
