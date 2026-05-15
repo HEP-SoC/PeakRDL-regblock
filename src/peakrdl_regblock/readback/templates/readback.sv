@@ -10,7 +10,7 @@ logic [{{cpuif.data_width-1}}:0] readback_array[{{array_size}}];
 logic [{{cpuif.data_width-1}}:0] readback_array_c[{{fanin_array_size}}];
 for(genvar g=0; g<{{fanin_loop_iter}}; g++) begin
     always_comb begin
-        automatic logic [{{cpuif.data_width-1}}:0] readback_data_var;
+        logic [{{cpuif.data_width-1}}:0] readback_data_var;
         readback_data_var = '0;
         for(int i=g*{{fanin_stride}}; i<((g+1)*{{fanin_stride}}); i++) readback_data_var |= readback_array[i];
         readback_array_c[g] = readback_data_var;
@@ -20,7 +20,7 @@ end
 assign readback_array_c[{{fanin_array_size-1}}] = readback_array[{{array_size-1}}];
 {%- elif fanin_residual_stride > 1 %}
 always_comb begin
-    automatic logic [{{cpuif.data_width-1}}:0] readback_data_var;
+    logic [{{cpuif.data_width-1}}:0] readback_data_var;
     readback_data_var = '0;
     for(int i={{(fanin_array_size-1) * fanin_stride}}; i<{{array_size}}; i++) readback_data_var |= readback_array[i];
     readback_array_c[{{fanin_array_size-1}}] = readback_data_var;
@@ -48,7 +48,7 @@ end
 
 // Reduce the array
 always_comb begin
-    automatic logic [{{cpuif.data_width-1}}:0] readback_data_var;
+    logic [{{cpuif.data_width-1}}:0] readback_data_var;
     readback_done = readback_done_r;
     {%- if ds.err_if_bad_addr or ds.err_if_bad_rw %}
     readback_err = readback_err_r;
@@ -64,7 +64,7 @@ end
 
 // Reduce the array
 always_comb begin
-    automatic logic [{{cpuif.data_width-1}}:0] readback_data_var;
+    logic [{{cpuif.data_width-1}}:0] readback_data_var;
     {%- if ds.has_external_addressable %}
     readback_done = decoded_req & ~decoded_req_is_wr & ~decoded_strb_is_external;
     {%- else %}
