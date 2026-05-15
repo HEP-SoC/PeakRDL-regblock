@@ -24,7 +24,7 @@ class AlwaysWrite(NextStateUnconditional):
         hwmask = field.get_property('hwmask')
         hwenable = field.get_property('hwenable')
         I = str(self.exp.hwif.get_input_identifier(field))
-        R = self.exp.field_logic.get_storage_identifier(field)
+        R = self.exp.field_logic.get_voted_storage_identifier(field)
         if hwmask is not None:
             M = self.exp.dereferencer.get_value(hwmask)
             next_val = f"{I} & ~{M} | {R} & {M}"
@@ -45,7 +45,7 @@ class _QualifiedWrite(NextStateConditional):
         hwmask = field.get_property('hwmask')
         hwenable = field.get_property('hwenable')
         I = str(self.exp.hwif.get_input_identifier(field))
-        R = self.exp.field_logic.get_storage_identifier(field)
+        R = self.exp.field_logic.get_voted_storage_identifier(field)
         if hwmask is not None:
             M = self.exp.dereferencer.get_value(hwmask)
             next_val = f"{I} & ~{M} | {R} & {M}"

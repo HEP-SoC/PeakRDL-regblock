@@ -56,7 +56,7 @@ class Dereferencer:
 
         if isinstance(obj, FieldNode):
             if obj.implements_storage:
-                return self.field_logic.get_storage_identifier(obj)
+                return self.field_logic.get_voted_storage_identifier(obj)
 
             if self.hwif.has_value_input(obj):
                 return self.hwif.get_input_identifier(obj, width)
