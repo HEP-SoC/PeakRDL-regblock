@@ -66,15 +66,15 @@ module {{ds.module_name}}
         end else if(cpuif_reqVoted && !cpuif_req_is_wrVoted) begin
             cpuif_req_stall_sr <= '1;
         end else begin
-            cpuif_req_stall_sr <= (cpuif_req_stall_sr >> 'd1);
+            cpuif_req_stall_sr <= (cpuif_req_stall_srVoted >> 'd1);
         end
     end
     {%- if ds.has_external_addressable %}
     assign cpuif_req_stall_rd = external_pendingVoted;
-    assign cpuif_req_stall_wr = cpuif_req_stall_sr[0] | external_pendingVoted;
+    assign cpuif_req_stall_wr = cpuif_req_stall_srVoted[0] | external_pendingVoted;
     {%- else %}
     assign cpuif_req_stall_rd = '0;
-    assign cpuif_req_stall_wr = cpuif_req_stall_sr[0];
+    assign cpuif_req_stall_wr = cpuif_req_stall_srVoted[0];
     {%- endif %}
 {%- else %}
     // Write latency > read latency. May need to delay next read that follows a write
@@ -86,14 +86,14 @@ module {{ds.module_name}}
         end else if(cpuif_reqVoted && cpuif_req_is_wrVoted) begin
             cpuif_req_stall_sr <= '1;
         end else begin
-            cpuif_req_stall_sr <= (cpuif_req_stall_sr >> 'd1);
+            cpuif_req_stall_sr <= (cpuif_req_stall_srVoted >> 'd1);
         end
     end
     {%- if ds.has_external_addressable %}
-    assign cpuif_req_stall_rd = cpuif_req_stall_sr[0] | external_pendingVoted;
+    assign cpuif_req_stall_rd = cpuif_req_stall_srVoted[0] | external_pendingVoted;
     assign cpuif_req_stall_wr = external_pendingVoted;
     {%- else %}
-    assign cpuif_req_stall_rd = cpuif_req_stall_sr[0];
+    assign cpuif_req_stall_rd = cpuif_req_stall_srVoted[0];
     assign cpuif_req_stall_wr = '0;
     {%- endif %}
 {%- endif %}
@@ -159,6 +159,7 @@ module {{ds.module_name}}
         end else begin
             if(decoded_req_is_external & ~external_wr_ack & ~external_rd_ack) external_pending <= '1;
             else if(external_wr_ack | external_rd_ack) external_pending <= '0;
+            else external_pending <= external_pendingVoted;
         end
     end
 {%- endif %}
@@ -200,16 +201,19 @@ module {{ds.module_name}}
     //--------------------------------------------------------------------------
     // Parity Error
     //--------------------------------------------------------------------------
+    logic parity_error_int;
+    wire parity_error_intVoted = parity_error_int;
     always_ff {{get_always_ff_event(cpuif.reset)}} begin
         if({{get_resetsignal(cpuif.reset)}}) begin
-            parity_error <= '0;
+            parity_error_int <= '0;
         end else begin
             logic err;
             err = '0;
             {{parity.get_implementation()|indent(12)}}
-            parity_error <= err;
+            parity_error_int <= err;
         end
     end
+    assign parity_error = parity_error_intVoted;
 {%- endif %}
 
 {%- if ds.has_buffered_read_regs %}
@@ -257,6 +261,7 @@ module {{ds.module_name}}
 
     logic readback_external_rd_ack;
     {%- if ds.retime_read_fanin %}
+    wire readback_external_rd_ackVoted = readback_external_rd_ack;
     always_ff {{get_always_ff_event(cpuif.reset)}} begin
         if({{get_resetsignal(cpuif.reset)}}) begin
             readback_external_rd_ack <= '0;
@@ -274,15 +279,17 @@ module {{ds.module_name}}
     logic [{{cpuif.addr_width-1}}:0] rd_mux_addr;
 {%- if ds.has_external_addressable %}
     logic [{{cpuif.addr_width-1}}:0] pending_rd_addr;
+    wire [{{cpuif.addr_width-1}}:0] pending_rd_addrVoted = pending_rd_addr;
     // Hold read mux address to guarantee it is stable throughout any external accesses
     always_ff {{get_always_ff_event(cpuif.reset)}} begin
         if({{get_resetsignal(cpuif.reset)}}) begin
             pending_rd_addr <= '0;
         end else begin
             if(decoded_req) pending_rd_addr <= decoded_addr;
+            else pending_rd_addr <= pending_rd_addrVoted;
         end
     end
-    assign rd_mux_addr = decoded_req ? decoded_addr : pending_rd_addr;
+    assign rd_mux_addr = decoded_req ? decoded_addr : pending_rd_addrVoted;
 {%- else %}
     assign rd_mux_addr = decoded_addr;
 {%- endif %}
@@ -302,6 +309,10 @@ module {{ds.module_name}}
         {%- endif %}
         end else begin
         {%- if ds.has_external_addressable %}
+            {%- if ds.retime_read_fanin %}
+            external_rd_ack <= readback_external_rd_ackVoted;
+            cpuif_rd_ack <= readback_done | readback_external_rd_ackVoted;
+            {%- else %}
             external_rd_ack <= readback_external_rd_ack;
             cpuif_rd_ack <= readback_done | readback_external_rd_ack;
         {%- else %}
@@ -313,6 +324,10 @@ module {{ds.module_name}}
     end
 {% else %}
     {%- if ds.has_external_addressable %}
+    {%- if ds.retime_read_fanin %}
+    assign external_rd_ack = readback_external_rd_ackVoted;
+    assign cpuif_rd_ack = readback_done | readback_external_rd_ackVoted;
+    {%- else %}
     assign external_rd_ack = readback_external_rd_ack;
     assign cpuif_rd_ack = readback_done | readback_external_rd_ack;
     {%- else %}
