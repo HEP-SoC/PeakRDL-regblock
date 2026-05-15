@@ -46,7 +46,9 @@ class FieldLogic:
         if s is None:
             return ""
 
-        return s + "\nfield_storage_t field_storage;"
+        s = "// tmrg copy start\n" + s + "\n// tmrg copy stop" + "\nfield_storage_t field_storage;"
+        s = s + "\nfield_storage_t field_storageVoted;"
+        return s + "\nassign field_storageVoted = field_storage;"
 
     def get_combo_struct(self) -> str:
         struct_gen = CombinationalStructGenerator(self)
@@ -56,7 +58,7 @@ class FieldLogic:
         if s is None:
             return ""
 
-        return s + "\nfield_combo_t field_combo;"
+        return "// tmrg copy start\n" + s + "\n// tmrg copy stop" + "\nfield_combo_t field_combo;"
 
     def get_implementation(self) -> str:
         gen = FieldLogicGenerator(self)
