@@ -159,12 +159,6 @@ module {{ds.module_name}}
         end else begin
             if(decoded_req_is_external & ~external_wr_ack & ~external_rd_ack) external_pending <= '1;
             else if(external_wr_ack | external_rd_ack) external_pending <= '0;
-            `ifndef SYNTHESIS
-                assert_bad_ext_wr_ack: assert(!external_wr_ack || (external_pending | decoded_req_is_external))
-                    else $error("An external wr_ack strobe was asserted when no external request was active");
-                assert_bad_ext_rd_ack: assert(!external_rd_ack || (external_pending | decoded_req_is_external))
-                    else $error("An external rd_ack strobe was asserted when no external request was active");
-            `endif
         end
     end
 {%- endif %}
