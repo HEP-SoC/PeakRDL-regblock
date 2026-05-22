@@ -103,7 +103,9 @@ module {{ds.module_name}}
     //--------------------------------------------------------------------------
     // Address Decode
     //--------------------------------------------------------------------------
+    // tmrg copy start
     {{address_decode.get_strobe_struct()|indent}}
+    // tmrg copy stop
     decoded_reg_strb_t decoded_reg_strb;
     logic decoded_err;
 {%- if ds.has_external_addressable %}
