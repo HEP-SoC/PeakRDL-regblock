@@ -63,6 +63,11 @@ always_ff {{get_always_ff_event(resetsignal)}} begin
             {%- if node.get_property('paritycheck') %}
             {{field_logic.get_parity_identifier(node)}} <= ^{{field_logic.get_field_combo_identifier(node, "next")}};
             {%- endif %}
+        end else begin
+            {{field_logic.get_storage_identifier(node)}} <= {{field_logic.get_voted_storage_identifier(node)}};
+            {%- if node.get_property('paritycheck') %}
+            {{field_logic.get_parity_identifier(node)}} <= ^{{field_logic.get_voted_storage_identifier(node)}};
+            {%- endif %}
         end
         {%- if field_logic.has_next_q(node) %}
         {{field_logic.get_next_q_identifier(node)}} <= {{get_input_identifier(node)}};
