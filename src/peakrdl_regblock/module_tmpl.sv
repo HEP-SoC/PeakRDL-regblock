@@ -299,29 +299,47 @@ module {{ds.module_name}}
     logic [{{cpuif.data_width-1}}:0] readback_data;
     {{readback_implementation|indent}}
 {% if ds.retime_read_response %}
+    logic cpuif_rd_ack_int;
+    wire cpuif_rd_ack_intVoted = cpuif_rd_ack_int;
+
+    logic [{{cpuif.data_width-1}}:0] cpuif_rd_data_int;
+    logic [{{cpuif.data_width-1}}:0] cpuif_rd_data_intVoted = cpuif_rd_data_int;
+
+    logic cpuif_rd_err;
+    wire cpuif_rd_errVoted = cpuif_rd_err;
+
+    logic external_rd_ack;
+    wire external_rd_ackVoted = external_rd_ack;
+
     always_ff {{get_always_ff_event(cpuif.reset)}} begin
         if({{get_resetsignal(cpuif.reset)}}) begin
-            cpuif_rd_ack <= '0;
-            cpuif_rd_data <= '0;
-            cpuif_rd_err <= '0;
+            cpuif_rd_ack_int <= '0;
+            cpuif_rd_data_int <= '0;
+            cpuif_rd_err_int <= '0;
         {%- if ds.has_external_addressable %}
-            external_rd_ack <= '0;
+            external_rd_ack_int <= '0;
         {%- endif %}
         end else begin
         {%- if ds.has_external_addressable %}
             {%- if ds.retime_read_fanin %}
-            external_rd_ack <= readback_external_rd_ackVoted;
-            cpuif_rd_ack <= readback_done | readback_external_rd_ackVoted;
+            external_rd_ack_int <= readback_external_rd_ackVoted;
+            cpuif_rd_ack_int <= readback_done | readback_external_rd_ackVoted;
             {%- else %}
-            external_rd_ack <= readback_external_rd_ack;
-            cpuif_rd_ack <= readback_done | readback_external_rd_ack;
+            external_rd_ack_int <= readback_external_rd_ack;
+            cpuif_rd_ack_int <= readback_done | readback_external_rd_ack;
+            {%- endif %}
         {%- else %}
-            cpuif_rd_ack <= readback_done;
+            cpuif_rd_ack_int <= readback_done;
         {%- endif %}
-            cpuif_rd_data <= readback_data;
-            cpuif_rd_err <= readback_err;
+            cpuif_rd_data_int <= readback_data;
+            cpuif_rd_err_int <= readback_err;
         end
     end
+
+    assign cpuif_rd_ack    = cpuif_rd_ack_intVoted;
+    assign cpuif_rd_data   = cpuif_rd_data_intVoted;
+    assign cpuif_rd_err    = cpuif_rd_err_intVoted;
+    assign external_rd_ack = external_rd_ack_intVoted;
 {% else %}
     {%- if ds.has_external_addressable %}
     {%- if ds.retime_read_fanin %}
@@ -330,6 +348,7 @@ module {{ds.module_name}}
     {%- else %}
     assign external_rd_ack = readback_external_rd_ack;
     assign cpuif_rd_ack = readback_done | readback_external_rd_ack;
+    {%- endif %}
     {%- else %}
     assign cpuif_rd_ack = readback_done;
     {%- endif %}
