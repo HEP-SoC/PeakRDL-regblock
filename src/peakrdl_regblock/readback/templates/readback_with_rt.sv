@@ -15,9 +15,13 @@ always_comb begin
 end
 
 logic [{{cpuif.data_width-1}}:0] readback_data_rt[{{2 ** high_addr_width}}];
+wire [{{cpuif.data_width-1}}:0] readback_data_rtVoted[{{2 ** high_addr_width}}] = readback_data_rt;
 logic readback_done_rt;
+wire readback_done_rtVoted = readback_done_rt;
 logic readback_err_rt;
+wire readback_err_rtVoted = readback_err_rt;
 logic [{{ds.addr_width-1}}:0] readback_addr_rt;
+wire [{{ds.addr_width-1}}:0] readback_addr_rtVoted = readback_addr_rt;
 always_ff {{get_always_ff_event(cpuif.reset)}} begin
     if({{get_resetsignal(cpuif.reset)}}) begin
         for(int i=0; i<{{2 ** high_addr_width}}; i++) readback_data_rt[i] <= '0;
@@ -50,7 +54,9 @@ always_comb begin
 end
 
 logic [{{cpuif.data_width-1}}:0] readback_ext_block_data_rt;
+wire [{{cpuif.data_width-1}}:0] readback_ext_block_data_rtVoted = readback_ext_block_data_rt;
 logic readback_is_ext_block;
+wire readback_is_ext_blockVoted = readback_is_ext_block;
 always_ff {{get_always_ff_event(cpuif.reset)}} begin
     if({{get_resetsignal(cpuif.reset)}}) begin
         readback_ext_block_data_rt <= '0;
@@ -65,17 +71,17 @@ end
 // readback stage 2
 always_comb begin
     {%- if ds.has_external_block %}
-    if(readback_is_ext_block) begin
-        readback_data = readback_ext_block_data_rt;
+    if(readback_is_ext_blockVoted) begin
+        readback_data = readback_ext_block_data_rtVoted;
     end else begin
-        readback_data = readback_data_rt[readback_addr_rt[{{ds.addr_width-1}}:{{low_addr_width}}]];
+        readback_data = readback_data_rtVoted[readback_addr_rtVoted[{{ds.addr_width-1}}:{{low_addr_width}}]];
     end
     {%- else %}
-    readback_data = readback_data_rt[readback_addr_rt[{{ds.addr_width-1}}:{{low_addr_width}}]];
+    readback_data = readback_data_rtVoted[readback_addr_rtVoted[{{ds.addr_width-1}}:{{low_addr_width}}]];
     {%- endif %}
-    readback_done = readback_done_rt;
+    readback_done = readback_done_rtVoted;
     {%- if ds.err_if_bad_addr or ds.err_if_bad_rw %}
-    readback_err = readback_err_rt;
+    readback_err = readback_err_rtVoted;
     {%- else %}
     readback_err = '0;
     {%- endif %}
